@@ -43,6 +43,19 @@ export function generateHealthId(): string {
 }
 
 /**
+ * Generate a unique Medical Identification Number (MIN)
+ * Format: MIN-XXXXXXXXXX (where X is numeric, 10 digits like phone number format)
+ */
+export function generateMIN(): string {
+  const numbers = '0123456789';
+  let min = '';
+  for (let i = 0; i < 10; i++) {
+    min += numbers.charAt(Math.floor(Math.random() * numbers.length));
+  }
+  return min;
+}
+
+/**
  * Generate a QR code containing the Health ID
  */
 export async function generateQRCode(healthId: string): Promise<string> {

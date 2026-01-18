@@ -2,6 +2,7 @@ import { collections } from '../config/firebase.js';
 import {
   Doctor,
   DoctorAvailability,
+  DoctorStatus,
   Patient,
   Visit,
   VisitStatus,
@@ -19,17 +20,24 @@ export interface CreateDoctorData {
   lastName: string;
   specialization: string;
   department: string;
+  departmentId?: string;
   licenseNumber: string;
   phoneNumber: string;
   email: string;
+  experienceYears?: number;
   maxPatients?: number;
+  profileImage?: string;
 }
 
 export interface UpdateDoctorData {
   specialization?: string;
   department?: string;
+  departmentId?: string;
   availability?: DoctorAvailability;
+  status?: DoctorStatus;
+  experienceYears?: number;
   maxPatients?: number;
+  profileImage?: string;
 }
 
 export class DoctorService {
@@ -58,12 +66,16 @@ export class DoctorService {
       lastName: data.lastName,
       specialization: data.specialization,
       department: data.department,
+      departmentId: data.departmentId,
       licenseNumber: data.licenseNumber,
       phoneNumber: data.phoneNumber,
       email: data.email,
       availability: DoctorAvailability.AVAILABLE,
+      status: DoctorStatus.AVAILABLE,
+      experienceYears: data.experienceYears || 0,
       maxPatients: data.maxPatients || 20,
       currentPatientCount: 0,
+      profileImage: data.profileImage,
       createdAt: now,
       updatedAt: now
     };
@@ -124,6 +136,13 @@ export class DoctorService {
    */
   async setAvailability(doctorId: string, availability: DoctorAvailability): Promise<Doctor> {
     return this.updateDoctor(doctorId, { availability });
+  }
+
+  /**
+   * Set doctor status (on duty, available, off duty)
+   */
+  async setStatus(doctorId: string, status: DoctorStatus): Promise<Doctor> {
+    return this.updateDoctor(doctorId, { status });
   }
 
   /**

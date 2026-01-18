@@ -236,6 +236,73 @@ export async function getPatientByHealthId(req: Request, res: Response, next: Ne
 
 /**
  * @swagger
+ * /patients/min/{min}:
+ *   get:
+ *     summary: Get patient by MIN (Medical Identification Number)
+ *     tags: [Patients]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: min
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 0867694560
+ *     responses:
+ *       200:
+ *         description: Patient retrieved
+ *       404:
+ *         description: Patient not found
+ */
+export async function getPatientByMIN(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const min = getString(req.params.min);
+
+    const patient = await patientService.getPatientByMIN(min);
+
+    // Check consent for providers
+    if (req.user!.role !== UserRole.PATIENT) {
+      const { hasConsent } = await consentService.checkConsent(patient.id, req.user!.userId);
+
+      // Log access
+      await consentService.logAccess(
+        patient.id,
+        req.user!.userId,
+        req.user!.role,
+        'VIEW_PATIENT_BY_MIN',
+        ['basic_info'],
+        false
+      );
+
+      if (!hasConsent) {
+        // Return limited info without consent
+        res.json({
+          success: true,
+          message: 'Limited access - consent required for full record',
+          data: {
+            min: patient.min,
+            healthId: patient.healthId,
+            firstName: patient.firstName,
+            lastName: patient.lastName,
+            consentRequired: true
+          }
+        });
+        return;
+      }
+    }
+
+    res.json({
+      success: true,
+      data: patient
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * @swagger
  * /patients/phone/{phoneNumber}:
  *   get:
  *     summary: Get patient by phone number

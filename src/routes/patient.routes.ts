@@ -38,6 +38,8 @@ router.get('/search', authorize(UserRole.DOCTOR, UserRole.ADMIN, UserRole.HOSPIT
 
 router.get('/health-id/:healthId', patientController.getPatientByHealthId);
 
+router.get('/min/:min', patientController.getPatientByMIN);
+
 router.get('/phone/:phoneNumber', authorize(UserRole.DOCTOR, UserRole.PHARMACIST, UserRole.ADMIN), patientController.getPatientByPhone);
 
 router.get('/emergency/:healthId', authorize(UserRole.DOCTOR, UserRole.HOSPITAL_ADMIN), patientController.getEmergencyProfile);

@@ -37,7 +37,23 @@ export const collections = {
   accessLogs: db.collection('accessLogs'),
   referrals: db.collection('referrals'),
   pharmacyVisits: db.collection('pharmacyVisits'),
-  otpVerifications: db.collection('otpVerifications')
+  otpVerifications: db.collection('otpVerifications'),
+  // New collections
+  departments: db.collection('departments'),
+  beds: db.collection('beds'),
+  appointments: db.collection('appointments'),
+  documents: db.collection('documents'),
+  consultationRecords: db.collection('consultationRecords'),
+  // Messages and Calendar
+  messages: db.collection('messages'),
+  conversations: db.collection('conversations'),
+  calendarEvents: db.collection('calendarEvents'),
+  // Treatments
+  treatments: db.collection('treatments'),
+  patientComplaints: db.collection('patientComplaints'),
+  // Statistics
+  patientStatistics: db.collection('patientStatistics'),
+  doctorStatistics: db.collection('doctorStatistics')
 };
 
 export default admin;

@@ -3,6 +3,8 @@ import {
   Patient,
   Gender,
   BloodType,
+  Genotype,
+  PatientStatus,
   Address,
   EmergencyContact,
   MedicalRecord,
@@ -13,6 +15,7 @@ import {
 import {
   generateId,
   generateHealthId,
+  generateMIN,
   generateQRCode,
   formatPhoneNumber,
   parsePagination
@@ -26,6 +29,7 @@ export interface CreatePatientData {
   userId: string;
   firstName: string;
   lastName: string;
+  otherName?: string;
   dateOfBirth: Date;
   gender: Gender;
   phoneNumber: string;
@@ -33,21 +37,33 @@ export interface CreatePatientData {
   nin?: string;
   address?: Address;
   bloodType?: BloodType;
+  genotype?: Genotype;
   allergies?: string[];
   chronicConditions?: string[];
   emergencyContact?: EmergencyContact;
+  status?: PatientStatus;
+  assignedDoctorId?: string;
+  weight?: number;
+  height?: number;
 }
 
 export interface UpdatePatientData {
   firstName?: string;
   lastName?: string;
+  otherName?: string;
   email?: string;
   nin?: string;
   address?: Address;
   bloodType?: BloodType;
+  genotype?: Genotype;
   allergies?: string[];
   chronicConditions?: string[];
   emergencyContact?: EmergencyContact;
+  status?: PatientStatus;
+  admissionDate?: Date;
+  assignedDoctorId?: string;
+  weight?: number;
+  height?: number;
 }
 
 export class PatientService {
@@ -69,6 +85,7 @@ export class PatientService {
 
     const patientId = generateId();
     const healthId = generateHealthId();
+    const min = generateMIN();
     const qrCode = await generateQRCode(healthId);
     const now = new Date();
 
@@ -76,9 +93,11 @@ export class PatientService {
       id: patientId,
       userId: data.userId,
       healthId,
+      min,
       qrCode,
       firstName: data.firstName,
       lastName: data.lastName,
+      otherName: data.otherName,
       dateOfBirth: data.dateOfBirth,
       gender: data.gender,
       phoneNumber: formattedPhone,
@@ -86,9 +105,15 @@ export class PatientService {
       nin: data.nin,
       address: data.address,
       bloodType: data.bloodType,
+      genotype: data.genotype,
       allergies: data.allergies || [],
       chronicConditions: data.chronicConditions || [],
       emergencyContact: data.emergencyContact,
+      status: data.status || PatientStatus.ACTIVE,
+      admissionDate: data.status === PatientStatus.ADMITTED ? now : undefined,
+      assignedDoctorId: data.assignedDoctorId,
+      weight: data.weight,
+      height: data.height,
       createdAt: now,
       updatedAt: now
     };
@@ -128,6 +153,22 @@ export class PatientService {
   async getPatientByHealthId(healthId: string): Promise<Patient> {
     const snapshot = await collections.patients
       .where('healthId', '==', healthId)
+      .limit(1)
+      .get();
+
+    if (snapshot.empty) {
+      throw new NotFoundError('Patient not found');
+    }
+
+    return snapshot.docs[0].data() as Patient;
+  }
+
+  /**
+   * Get patient by MIN (Medical Identification Number)
+   */
+  async getPatientByMIN(min: string): Promise<Patient> {
+    const snapshot = await collections.patients
+      .where('min', '==', min)
       .limit(1)
       .get();
 
