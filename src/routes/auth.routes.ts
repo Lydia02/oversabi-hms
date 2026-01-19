@@ -8,14 +8,30 @@ const router = Router();
 
 // Validation rules
 const registerValidation = [
+  body('firstName').notEmpty().trim().withMessage('First name is required'),
+  body('lastName').notEmpty().trim().withMessage('Last name is required'),
+  body('otherName').optional().trim(),
+  body('age').isInt({ min: 1, max: 150 }).withMessage('Valid age is required'),
   body('email').isEmail().withMessage('Valid email is required'),
   body('phoneNumber').notEmpty().withMessage('Phone number is required'),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-  body('role').isIn(['patient', 'doctor', 'pharmacist', 'lab_technician', 'admin', 'hospital_admin']).withMessage('Invalid role')
+  body('confirmPassword').custom((value, { req }) => {
+    if (value !== req.body.password) {
+      throw new Error('Passwords do not match');
+    }
+    return true;
+  }),
+  body('role').isIn(['patient', 'doctor']).withMessage('Role must be either patient or doctor'),
+  body('mdcnNumber').custom((value, { req }) => {
+    if (req.body.role === 'doctor' && !value) {
+      throw new Error('MDCN Number is required for doctors');
+    }
+    return true;
+  })
 ];
 
 const loginValidation = [
-  body('email').isEmail().withMessage('Valid email is required'),
+  body('uniqueId').notEmpty().withMessage('User ID is required'),
   body('password').notEmpty().withMessage('Password is required')
 ];
 

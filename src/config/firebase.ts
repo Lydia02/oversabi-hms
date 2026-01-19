@@ -53,7 +53,11 @@ export const collections = {
   patientComplaints: db.collection('patientComplaints'),
   // Statistics
   patientStatistics: db.collection('patientStatistics'),
-  doctorStatistics: db.collection('doctorStatistics')
+  doctorStatistics: db.collection('doctorStatistics'),
+  // MDCN Verification
+  mdcnRecords: db.collection('mdcnRecords'),
+  // Medical Reports
+  medicalReports: db.collection('medicalReports')
 };
 
 export default admin;

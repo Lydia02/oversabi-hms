@@ -12,7 +12,8 @@ import {
 import {
   generateId,
   generateOTP,
-  formatPhoneNumber
+  formatPhoneNumber,
+  generateUserUniqueId
 } from '../utils/helpers.js';
 import {
   UnauthorizedError,
@@ -20,20 +21,76 @@ import {
   NotFoundError,
   ConflictError
 } from '../utils/errors.js';
+import { emailService } from './email.service.js';
+import { mdcnService } from './mdcn.service.js';
+
+interface RegisterData {
+  firstName: string;
+  lastName: string;
+  otherName?: string;
+  age: number;
+  email: string;
+  phoneNumber: string;
+  password: string;
+  role: UserRole;
+  mdcnNumber?: string;
+}
 
 export class AuthService {
   /**
+   * Generate a unique user ID that doesn't exist in the database
+   */
+  private async generateUniqueUserId(role: 'doctor' | 'patient'): Promise<string> {
+    let uniqueId: string;
+    let exists = true;
+
+    while (exists) {
+      uniqueId = generateUserUniqueId(role);
+      const existingUser = await collections.users
+        .where('uniqueId', '==', uniqueId)
+        .limit(1)
+        .get();
+      exists = !existingUser.empty;
+    }
+
+    return uniqueId!;
+  }
+
+  /**
    * Register a new user
    */
-  async register(
-    email: string,
-    phoneNumber: string,
-    password: string,
-    role: UserRole
-  ): Promise<{ user: Omit<User, 'passwordHash'>; tokens: AuthTokens }> {
+  async register(data: RegisterData): Promise<{ user: Omit<User, 'passwordHash'>; tokens: AuthTokens }> {
+    const { firstName, lastName, otherName, age, email, phoneNumber, password, role, mdcnNumber } = data;
     const formattedPhone = formatPhoneNumber(phoneNumber);
 
-    // Check if user already exists
+    // Validate role is either doctor or patient
+    if (role !== UserRole.DOCTOR && role !== UserRole.PATIENT) {
+      throw new BadRequestError('Role must be either doctor or patient');
+    }
+
+    // Validate and verify MDCN number for doctors
+    let hospitalName: string | undefined;
+    if (role === UserRole.DOCTOR) {
+      if (!mdcnNumber) {
+        throw new BadRequestError('MDCN Number is required for doctors');
+      }
+
+      // Verify MDCN exists in our database
+      const mdcnRecord = await mdcnService.verifyMDCN(mdcnNumber);
+      hospitalName = mdcnRecord.hospitalName;
+
+      // Check if MDCN is already registered to another user
+      const existingByMDCN = await collections.users
+        .where('mdcnNumber', '==', mdcnNumber.toUpperCase())
+        .limit(1)
+        .get();
+
+      if (!existingByMDCN.empty) {
+        throw new ConflictError('This MDCN number is already registered to another account');
+      }
+    }
+
+    // Check if user already exists by email
     const existingByEmail = await collections.users
       .where('email', '==', email)
       .limit(1)
@@ -43,6 +100,7 @@ export class AuthService {
       throw new ConflictError('Email already registered');
     }
 
+    // Check if user already exists by phone
     const existingByPhone = await collections.users
       .where('phoneNumber', '==', formattedPhone)
       .limit(1)
@@ -52,6 +110,9 @@ export class AuthService {
       throw new ConflictError('Phone number already registered');
     }
 
+    // Generate unique user ID (DOC_XXX or PAT_XXX)
+    const uniqueId = await this.generateUniqueUserId(role === UserRole.DOCTOR ? 'doctor' : 'patient');
+
     // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
@@ -60,10 +121,17 @@ export class AuthService {
 
     const user: User = {
       id: userId,
+      uniqueId,
+      firstName,
+      lastName,
+      otherName,
+      age,
       email,
       phoneNumber: formattedPhone,
       passwordHash,
       role,
+      mdcnNumber: role === UserRole.DOCTOR ? mdcnNumber?.toUpperCase() : undefined,
+      hospitalName: role === UserRole.DOCTOR ? hospitalName : undefined,
       isVerified: false,
       isActive: true,
       createdAt: now,
@@ -72,6 +140,15 @@ export class AuthService {
 
     await collections.users.doc(userId).set(user);
 
+    // Send registration email with unique ID
+    await emailService.sendRegistrationEmail({
+      firstName,
+      lastName,
+      uniqueId,
+      role: role === UserRole.DOCTOR ? 'doctor' : 'patient',
+      email
+    });
+
     const tokens = this.generateTokens({ userId, role });
 
     const { passwordHash: _, ...userWithoutPassword } = user;
@@ -79,11 +156,11 @@ export class AuthService {
   }
 
   /**
-   * Login with email and password
+   * Login with unique ID and password
    */
-  async login(email: string, password: string): Promise<{ user: Omit<User, 'passwordHash'>; tokens: AuthTokens }> {
+  async login(uniqueId: string, password: string): Promise<{ user: Omit<User, 'passwordHash'>; tokens: AuthTokens }> {
     const snapshot = await collections.users
-      .where('email', '==', email)
+      .where('uniqueId', '==', uniqueId)
       .limit(1)
       .get();
 

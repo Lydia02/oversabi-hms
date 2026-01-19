@@ -86,6 +86,16 @@ export function generateId(): string {
 }
 
 /**
+ * Generate a unique user ID based on role
+ * Format: DOC_XXX for doctors, PAT_XXX for patients
+ */
+export function generateUserUniqueId(role: 'doctor' | 'patient'): string {
+  const prefix = role === 'doctor' ? 'DOC' : 'PAT';
+  const randomNum = Math.floor(100 + Math.random() * 900); // 3-digit random number (100-999)
+  return `${prefix}_${randomNum}`;
+}
+
+/**
  * Format phone number to standard format
  */
 export function formatPhoneNumber(phone: string): string {

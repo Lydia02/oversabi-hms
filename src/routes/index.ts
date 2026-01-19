@@ -1,20 +1,9 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes.js';
-import patientRoutes from './patient.routes.js';
-import doctorRoutes from './doctor.routes.js';
-import visitRoutes from './visit.routes.js';
-import consentRoutes from './consent.routes.js';
-import pharmacyRoutes from './pharmacy.routes.js';
-import labRoutes from './lab.routes.js';
-import departmentRoutes from './department.routes.js';
-import appointmentRoutes from './appointment.routes.js';
-import documentRoutes from './document.routes.js';
-import dashboardRoutes from './dashboard.routes.js';
-import consultationRoutes from './consultation.routes.js';
-import messageRoutes from './message.routes.js';
-import calendarRoutes from './calendar.routes.js';
-import treatmentRoutes from './treatment.routes.js';
-import statisticsRoutes from './statistics.routes.js';
+import medicalReportRoutes from './medicalReport.routes.js';
+import patientReportRoutes from './patientReport.routes.js';
+import mdcnRoutes from './mdcn.routes.js';
+import seedRoutes from './seed.routes.js';
 
 const router = Router();
 
@@ -29,20 +18,9 @@ router.get('/health', (_req, res) => {
 
 // Mount routes
 router.use('/auth', authRoutes);
-router.use('/patients', patientRoutes);
-router.use('/doctors', doctorRoutes);
-router.use('/visits', visitRoutes);
-router.use('/consent', consentRoutes);
-router.use('/pharmacy', pharmacyRoutes);
-router.use('/lab', labRoutes);
-router.use('/departments', departmentRoutes);
-router.use('/appointments', appointmentRoutes);
-router.use('/documents', documentRoutes);
-router.use('/dashboard', dashboardRoutes);
-router.use('/consultations', consultationRoutes);
-router.use('/messages', messageRoutes);
-router.use('/calendar', calendarRoutes);
-router.use('/treatments', treatmentRoutes);
-router.use('/statistics', statisticsRoutes);
+router.use('/medical-reports', medicalReportRoutes);
+router.use('/patient-reports', patientReportRoutes);
+router.use('/mdcn', mdcnRoutes);
+router.use('/seed', seedRoutes);
 
 export default router;

@@ -128,10 +128,17 @@ export interface BaseEntity {
 }
 
 export interface User extends BaseEntity {
+  uniqueId: string; // DOC_XXX for doctors, PAT_XXX for patients
+  firstName: string;
+  lastName: string;
+  otherName?: string;
+  age: number;
   email: string;
   phoneNumber: string;
   passwordHash: string;
   role: UserRole;
+  mdcnNumber?: string; // Required for doctors only
+  hospitalName?: string; // From MDCN verification for doctors
   isVerified: boolean;
   isActive: boolean;
 }
@@ -666,4 +673,67 @@ export interface OTPVerification {
   expiresAt: Date;
   attempts: number;
   verified: boolean;
+}
+
+// ===== MDCN VERIFICATION =====
+
+export interface MDCNRecord {
+  id: string;
+  mdcnNumber: string;
+  doctorName: string;
+  hospitalName: string;
+  hospitalAddress: string;
+  specialization: string;
+  isActive: boolean;
+  registeredAt: Date;
+  expiresAt: Date;
+}
+
+// ===== MEDICAL REPORTS =====
+
+export enum MedicalReportStatus {
+  DRAFT = 'draft',
+  FINAL = 'final',
+  AMENDED = 'amended'
+}
+
+export interface MedicalReport extends BaseEntity {
+  patientId: string;
+  patientUniqueId: string;
+  patientName: string;
+  doctorId: string;
+  doctorUniqueId: string;
+  doctorName: string;
+  hospitalName: string;
+
+  // Report Details
+  title: string;
+  chiefComplaint: string;
+  presentIllness: string;
+  pastMedicalHistory?: string;
+  familyHistory?: string;
+  socialHistory?: string;
+
+  // Examination
+  physicalExamination?: string;
+  vitalSigns?: VitalSigns;
+
+  // Diagnosis & Treatment
+  diagnosis: string;
+  diagnosisCode?: string; // ICD-10
+  treatment: string;
+  medications?: Medication[];
+
+  // Additional
+  labResults?: string;
+  imaging?: string;
+  recommendations?: string;
+  followUpDate?: Date;
+
+  // Status
+  status: MedicalReportStatus;
+
+  // Audit
+  lastEditedBy?: string;
+  lastEditedAt?: Date;
 }

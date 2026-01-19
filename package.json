@@ -9,7 +9,12 @@
     "start": "node dist/index.js",
     "lint": "tsc --noEmit"
   },
-  "keywords": ["healthcare", "hospital-management", "nigeria", "health-id"],
+  "keywords": [
+    "healthcare",
+    "hospital-management",
+    "nigeria",
+    "health-id"
+  ],
   "author": "",
   "license": "ISC",
   "description": "Oversabi Hospital Management System - Seamless health records transfer across hospitals",
@@ -22,6 +27,8 @@
     "firebase-admin": "^13.6.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^7.0.12",
+    "pdfkit": "^0.17.2",
     "qrcode": "^1.5.4",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
@@ -33,6 +40,8 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.0.8",
+    "@types/nodemailer": "^7.0.5",
+    "@types/pdfkit": "^0.17.4",
     "@types/qrcode": "^1.5.6",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
