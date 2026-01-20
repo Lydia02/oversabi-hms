@@ -163,6 +163,9 @@ class EmailService {
 
   async sendRegistrationEmail(data: RegistrationEmailData): Promise<boolean> {
     try {
+      console.log(`📧 Attempting to send registration email to ${data.email}...`);
+      console.log(`Email config: Host=${config.email.host}, Port=${config.email.port}, Secure=${config.email.secure}, User=${config.email.user}`);
+      
       const htmlContent = this.getRegistrationEmailTemplate(data);
       const roleDisplay = data.role === 'doctor' ? 'Doctor' : 'Patient';
 
@@ -191,11 +194,12 @@ Need help? Contact our support team.
         `
       };
 
-      await this.transporter.sendMail(mailOptions);
-      console.log(`Registration email sent to ${data.email}`);
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Registration email sent successfully to ${data.email}. Message ID: ${info.messageId}`);
       return true;
-    } catch (error) {
-      console.error('Failed to send registration email:', error);
+    } catch (error: any) {
+      console.error('❌ Failed to send registration email:', error.message);
+      console.error('Full error:', error);
       return false;
     }
   }

@@ -146,13 +146,17 @@ export class AuthService {
     }
 
     // Send registration email with unique ID
-    await emailService.sendRegistrationEmail({
+    const emailSent = await emailService.sendRegistrationEmail({
       firstName,
       lastName,
       uniqueId,
       role: role === UserRole.DOCTOR ? 'doctor' : 'patient',
       email
     });
+
+    if (!emailSent) {
+      console.warn(`⚠️  Warning: Failed to send registration email to ${email}. User ${uniqueId} created successfully but email notification failed.`);
+    }
 
     const tokens = this.generateTokens({ userId, role });
 
