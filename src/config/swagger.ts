@@ -12,86 +12,199 @@ const options: swaggerJsdoc.Options = {
 
 A comprehensive healthcare management system designed for seamless health records transfer across hospitals in Nigeria.
 
-## Getting Started
+---
 
-### 1. Setup Test Data
-Before testing, seed the MDCN database:
+## Complete End-to-End User Flows
+
+### 🏥 DOCTOR FLOW: From Registration to Report Management
+
+#### 1. Register as Doctor
 \`\`\`
-POST /api/v1/mdcn/seed
+POST /auth/register
 \`\`\`
+- Provide: firstName, lastName, age, email, phoneNumber, password, confirmPassword, role (doctor), mdcnNumber
+- Response: Confirmation message
+- Email: Unique Doctor ID (DOC_XXX) sent to your email
 
-### 2. Get Sample MDCN Numbers
-Get valid MDCN numbers for doctor registration:
+#### 2. Receive Login Credentials
+- Check your email for unique Doctor ID (DOC_XXX) and confirm it's linked to your account
+- Your MDCN number is verified and marked as used - cannot be reused
+
+#### 3. Login
 \`\`\`
-GET /api/v1/mdcn/sample-numbers
+POST /auth/login
 \`\`\`
+- Use: uniqueId (DOC_XXX) + password
+- Response: Access token (24 hours) + Refresh token (7 days) + Your profile details
 
-### 3. Register a User
-- **Doctors:** Require valid MDCN number from step 2
-- **Patients:** No MDCN number required
+#### 4. Search for Patient
+\`\`\`
+GET /medical-reports/search-patient?uniqueId=PAT_123
+\`\`\`
+- Returns: Patient details if patient ID is valid
+- Use this to verify patient exists before creating report
 
-### 4. Check Email
-After registration, users receive an email with their unique login ID:
-- Doctors: \`DOC_XXX\`
-- Patients: \`PAT_XXX\`
+#### 5. Create Medical Report for Patient
+\`\`\`
+POST /medical-reports
+\`\`\`
+- Provide: patientUniqueId, title, chiefComplaint, presentIllness, diagnosis, treatment
+- Optional: pastMedicalHistory, familyHistory, socialHistory, physicalExamination, vitalSigns, diagnosisCode, medications, labResults, imaging, recommendations, followUpDate
+- Response: Report created with unique ID, timestamp, and status (draft/final)
 
-### 5. Login
-Use the unique ID and password to login and get access tokens.
+#### 6. Edit Your Report
+\`\`\`
+PUT /medical-reports/{reportId}
+\`\`\`
+- Update any fields in the report
+- Can only edit reports you created
+- Response: Updated report
+
+#### 7. Delete Your Report
+\`\`\`
+DELETE /medical-reports/{reportId}
+\`\`\`
+- Permanently removes the report
+- Can only delete reports you created
+- Response: Deletion confirmation
+
+#### 8. View Your Reports
+\`\`\`
+GET /medical-reports
+\`\`\`
+- List all reports you've created
+- Supports pagination (page, limit)
+- Filter by status, patient, date range
+
+#### 9. Refresh Token (When Access Token Expires)
+\`\`\`
+POST /auth/refresh-token
+\`\`\`
+- Use your refresh token to get a new access token
+- Refresh token lasts 7 days
 
 ---
 
-## User Roles
+### 👤 PATIENT FLOW: From Registration to Viewing Reports
 
-| Role | Description | Capabilities |
-|------|-------------|--------------|
-| **Doctor** | Medical professional with MDCN verification | Create/Edit/Delete medical reports, Search patients |
-| **Patient** | Healthcare recipient | View own reports, Download PDF reports |
+#### 1. Register as Patient
+\`\`\`
+POST /auth/register
+\`\`\`
+- Provide: firstName, lastName, age, email, phoneNumber, password, confirmPassword, role (patient)
+- Note: No MDCN number required for patients
+- Response: Confirmation message
+- Email: Unique Patient ID (PAT_XXX) sent to your email
+
+#### 2. Receive Login Credentials
+- Check your email for unique Patient ID (PAT_XXX)
+- This ID is how doctors will identify you in the system
+
+#### 3. Login
+\`\`\`
+POST /auth/login
+\`\`\`
+- Use: uniqueId (PAT_XXX) + password
+- Response: Access token (24 hours) + Refresh token (7 days) + Your profile details
+
+#### 4. View All Your Medical Reports
+\`\`\`
+GET /patient-reports
+\`\`\`
+- See all medical reports created by doctors for you
+- Supports pagination (page, limit)
+- Reports sorted by creation date (newest first)
+- Response: List of all your medical reports with full details
+
+#### 5. View Specific Report Details
+\`\`\`
+GET /patient-reports/{reportId}
+\`\`\`
+- View complete details of a single report
+- Includes: doctor info, diagnosis, treatment, vital signs, recommendations
+- Can only view your own reports
+
+#### 6. Download Single Report as PDF
+\`\`\`
+GET /patient-reports/{reportId}/download
+\`\`\`
+- Downloads the specific report as a PDF file
+- PDF includes: Report title, doctor info, hospital, diagnosis, treatment, and recommendations
+- File name: report-[reportId].pdf
+
+#### 7. Download All Reports as PDF (Complete Medical History)
+\`\`\`
+GET /patient-reports/download-all
+\`\`\`
+- Downloads all your medical reports combined in one PDF
+- Perfect for transferring complete medical history between hospitals
+- File name: medical-history-[patientId].pdf
+
+#### 8. Refresh Token (When Access Token Expires)
+\`\`\`
+POST /auth/refresh-token
+\`\`\`
+- Use your refresh token to get a new access token
+- Refresh token lasts 7 days
 
 ---
 
-## Authentication Flow
+## User Roles & Permissions
 
-1. **Register** → Receive unique ID via email
-2. **Login** → Get access token (24h) + refresh token (7 days)
-3. **Use API** → Include token in Authorization header
-4. **Refresh** → Use refresh token when access token expires
+| Feature | Doctor | Patient |
+|---------|--------|---------|
+| Register | ✅ (with MDCN) | ✅ |
+| Login | ✅ | ✅ |
+| Search Patients | ✅ | ❌ |
+| Create Reports | ✅ | ❌ |
+| Edit Reports | ✅ (own only) | ❌ |
+| Delete Reports | ✅ (own only) | ❌ |
+| View Reports | ✅ (own created) | ✅ (own received) |
+| Download PDF | ❌ | ✅ |
+
+---
+
+## Authentication & Security
 
 ### Authorization Header
+Include in all authenticated requests:
 \`\`\`
 Authorization: Bearer <access_token>
 \`\`\`
+
+### Token Details
+- **Access Token**: Valid for 24 hours
+- **Refresh Token**: Valid for 7 days
+- **Token Type**: JWT (JSON Web Token)
+
+### Password Requirements
+- Minimum 8 characters
+- Should include uppercase, lowercase, numbers, and special characters for security
 
 ---
 
 ## Error Codes
 
-| Code | Description |
-|------|-------------|
-| \`BAD_REQUEST\` | Invalid input data |
-| \`UNAUTHORIZED\` | Missing or invalid token |
-| \`FORBIDDEN\` | Insufficient permissions |
-| \`NOT_FOUND\` | Resource not found |
-| \`CONFLICT\` | Resource already exists |
-| \`VALIDATION_ERROR\` | Input validation failed |
-| \`TOKEN_EXPIRED\` | Access token has expired |
-| \`INVALID_TOKEN\` | Token is malformed |
+| Code | Status | Description |
+|------|--------|-------------|
+| \`BAD_REQUEST\` | 400 | Invalid input data |
+| \`UNAUTHORIZED\` | 401 | Missing or invalid token |
+| \`FORBIDDEN\` | 403 | Insufficient permissions (wrong role) |
+| \`NOT_FOUND\` | 404 | Resource not found |
+| \`CONFLICT\` | 409 | Resource already exists |
+| \`VALIDATION_ERROR\` | 400 | Input validation failed |
+| \`TOKEN_EXPIRED\` | 401 | Access token has expired - use refresh token |
+| \`INVALID_TOKEN\` | 401 | Token is malformed or invalid |
 
 ---
 
-## Quick Reference
+## Important Notes
 
-### Doctor Workflow
-1. Register with MDCN number
-2. Login with unique ID
-3. Search patient by \`PAT_XXX\`
-4. Create medical reports
-5. Edit/Delete own reports
-
-### Patient Workflow
-1. Register (no MDCN required)
-2. Login with unique ID
-3. View medical reports
-4. Download individual or all reports as PDF
+- **MDCN Verification**: Each MDCN number can only be used ONCE for doctor registration
+- **Unique IDs**: Once received, your unique ID (DOC_XXX or PAT_XXX) is permanent and used for all logins
+- **Email Delivery**: Make sure to check your email after registration to get your unique login ID
+- **Token Refresh**: Keep your refresh token safe - it's needed to get new access tokens when they expire
+- **Data Transfer**: Patients can download all reports as PDF to transfer medical history to other hospitals
       `,
       contact: {
         name: 'Oversabi Support',
@@ -244,19 +357,7 @@ Register new users (doctors or patients) and manage authentication tokens.
 - Doctors require MDCN verification during registration
 - Users receive unique login IDs via email (DOC_XXX or PAT_XXX)
 - Login returns JWT access token (24h) and refresh token (7 days)
-        `
-      },
-      {
-        name: 'MDCN',
-        description: `
-**Medical and Dental Council of Nigeria Verification**
-
-Manage and verify MDCN records for doctor registration.
-
-**Testing Steps:**
-1. Call \`POST /mdcn/seed\` to populate sample data
-2. Call \`GET /mdcn/sample-numbers\` to get valid MDCN numbers
-3. Use a sample MDCN number when registering as a doctor
+- Both doctors and patients use the same authentication endpoints
         `
       },
       {
@@ -268,11 +369,20 @@ Create, read, update, and delete medical reports for patients.
 
 **Access:** Doctors only (requires authentication)
 
+**Complete Doctor Report Workflow:**
+1. Login to get access token
+2. Search for patient by unique ID (PAT_XXX) using \`GET /medical-reports/search-patient\`
+3. Create new report using \`POST /medical-reports\`
+4. View all your reports using \`GET /medical-reports\`
+5. Edit report using \`PUT /medical-reports/{reportId}\`
+6. Delete report using \`DELETE /medical-reports/{reportId}\`
+
 **Features:**
 - Search patients by unique ID (PAT_XXX)
-- Create comprehensive medical reports
+- Create comprehensive medical reports with diagnosis, treatment, vital signs
 - Edit/Delete only reports you created
-- View all reports you've created
+- View all reports you've created with pagination support
+- Status tracking: draft, final, amended
         `
       },
       {
@@ -284,32 +394,19 @@ Access and download your own medical reports.
 
 **Access:** Patients only (requires authentication)
 
+**Complete Patient Report Workflow:**
+1. Login to get access token
+2. View all your reports using \`GET /patient-reports\`
+3. Click on specific report using \`GET /patient-reports/{reportId}\`
+4. Download single report as PDF using \`GET /patient-reports/{reportId}/download\`
+5. Download complete medical history as PDF using \`GET /patient-reports/download-all\`
+
 **Features:**
-- View all your medical reports
+- View all your medical reports with pagination
 - View individual report details
 - Download single report as PDF
-- Download complete medical history as PDF
-        `
-      },
-      {
-        name: 'Seed Data',
-        description: `
-**Development/Testing Only - Sample Data Generation**
-
-Seed the database with sample Nigerian patients, doctors, and medical reports for testing.
-
-**Quick Start:**
-1. Call \`POST /seed/all\` to seed all sample data at once
-2. Call \`GET /seed/credentials\` to get login credentials
-
-**Sample Data Includes:**
-- 10 Nigerian patients with common health conditions
-- 2 Nigerian doctors at LUTH and National Hospital Abuja
-- Sample medical reports linking patients to doctors
-
-**Default Passwords:**
-- Patients: \`Password123!\`
-- Doctors: \`DoctorPass123!\`
+- Download complete medical history as PDF (all reports combined)
+- Reports sorted by creation date (newest first)
         `
       }
     ]
