@@ -328,6 +328,97 @@ export class AuthService {
     const { passwordHash: _, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
+
+  /**
+   * Update user profile
+   */
+  async updateProfile(
+    userId: string,
+    updates: Partial<{
+      firstName: string;
+      lastName: string;
+      otherName: string;
+      age: number;
+      dateOfBirth: Date;
+      phoneNumber: string;
+      bloodGroup: string;
+      genotype: string;
+      height: number;
+      weight: number;
+      profilePicture: string;
+    }>
+  ): Promise<Omit<User, 'passwordHash'>> {
+    const userDoc = await collections.users.doc(userId).get();
+
+    if (!userDoc.exists) {
+      throw new NotFoundError('User not found');
+    }
+
+    const user = userDoc.data() as User;
+
+    // Validate phone number if being updated
+    if (updates.phoneNumber) {
+      const formattedPhone = formatPhoneNumber(updates.phoneNumber);
+      
+      // Check if phone number is already taken by another user
+      const existingByPhone = await collections.users
+        .where('phoneNumber', '==', formattedPhone)
+        .limit(1)
+        .get();
+
+      if (!existingByPhone.empty && existingByPhone.docs[0].id !== userId) {
+        throw new ConflictError('Phone number already in use');
+      }
+
+      updates.phoneNumber = formattedPhone;
+    }
+
+    // Update user document
+    await collections.users.doc(userId).set({
+      ...updates,
+      updatedAt: new Date()
+    }, { merge: true });
+
+    // Get updated user
+    const updatedUserDoc = await collections.users.doc(userId).get();
+    const updatedUser = updatedUserDoc.data() as User;
+    const { passwordHash: _, ...userWithoutPassword } = updatedUser;
+
+    return userWithoutPassword;
+  }
+
+  /**
+   * Change user password
+   */
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string
+  ): Promise<void> {
+    const userDoc = await collections.users.doc(userId).get();
+
+    if (!userDoc.exists) {
+      throw new NotFoundError('User not found');
+    }
+
+    const user = userDoc.data() as User;
+
+    // Verify current password
+    const isValidPassword = await bcrypt.compare(currentPassword, user.passwordHash);
+
+    if (!isValidPassword) {
+      throw new UnauthorizedError('Current password is incorrect');
+    }
+
+    // Hash new password
+    const newPasswordHash = await bcrypt.hash(newPassword, 12);
+
+    // Update password
+    await collections.users.doc(userId).set({
+      passwordHash: newPasswordHash,
+      updatedAt: new Date()
+    }, { merge: true });
+  }
 }
 
 export const authService = new AuthService();

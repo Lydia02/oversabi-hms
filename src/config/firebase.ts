@@ -57,7 +57,9 @@ export const collections = {
   // MDCN Verification
   mdcnRecords: db.collection('mdcnRecords'),
   // Medical Reports
-  medicalReports: db.collection('medicalReports')
+  medicalReports: db.collection('medicalReports'),
+  // Notifications
+  notifications: db.collection('notifications')
 };
 
 export default admin;

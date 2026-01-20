@@ -525,3 +525,195 @@ export async function getCurrentUser(req: Request, res: Response, next: NextFunc
     next(error);
   }
 }
+
+/**
+ * @swagger
+ * /auth/profile:
+ *   put:
+ *     summary: Update user profile
+ *     description: |
+ *       Update the logged-in user's profile information.
+ *       Can update personal details, health information, and profile picture.
+ *       
+ *       **All fields are optional** - only send the fields you want to update.
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 example: "John"
+ *               lastName:
+ *                 type: string
+ *                 example: "Doe"
+ *               otherName:
+ *                 type: string
+ *                 example: "Michael"
+ *               age:
+ *                 type: integer
+ *                 example: 30
+ *               dateOfBirth:
+ *                 type: string
+ *                 format: date
+ *                 example: "1995-06-15"
+ *               phoneNumber:
+ *                 type: string
+ *                 example: "08012345678"
+ *               bloodGroup:
+ *                 type: string
+ *                 enum: [A+, A-, B+, B-, O+, O-, AB+, AB-]
+ *                 example: "O+"
+ *               genotype:
+ *                 type: string
+ *                 enum: [AA, AS, SS, AC, SC, CC]
+ *                 example: "AA"
+ *               height:
+ *                 type: number
+ *                 description: Height in centimeters
+ *                 example: 175
+ *               weight:
+ *                 type: number
+ *                 description: Weight in kilograms
+ *                 example: 70
+ *               profilePicture:
+ *                 type: string
+ *                 description: URL to profile picture
+ *                 example: "https://storage.example.com/profiles/user123.jpg"
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Profile updated successfully"
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Bad request - Invalid data
+ *       401:
+ *         description: Unauthorized - No token or invalid token
+ *       409:
+ *         description: Conflict - Phone number already in use
+ */
+export async function updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.userId;
+    const updates = req.body;
+
+    // Convert dateOfBirth string to Date if provided
+    if (updates.dateOfBirth) {
+      updates.dateOfBirth = new Date(updates.dateOfBirth);
+    }
+
+    const updatedUser = await authService.updateProfile(userId, updates);
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: updatedUser
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * @swagger
+ * /auth/change-password:
+ *   put:
+ *     summary: Change user password
+ *     description: |
+ *       Change the password for the logged-in user.
+ *       Requires the current password for verification.
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *               - confirmPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 description: User's current password
+ *                 example: "OldPass123"
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 8
+ *                 description: New password (minimum 8 characters)
+ *                 example: "NewPass456"
+ *               confirmPassword:
+ *                 type: string
+ *                 description: Must match newPassword
+ *                 example: "NewPass456"
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Password changed successfully"
+ *       400:
+ *         description: Bad request - Passwords don't match or invalid format
+ *       401:
+ *         description: Unauthorized - Current password is incorrect
+ */
+export async function changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.userId;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (newPassword !== confirmPassword) {
+      res.status(400).json({
+        success: false,
+        message: 'New password and confirm password do not match',
+        code: 'VALIDATION_ERROR'
+      });
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      res.status(400).json({
+        success: false,
+        message: 'New password must be at least 8 characters long',
+        code: 'VALIDATION_ERROR'
+      });
+      return;
+    }
+
+    await authService.changePassword(userId, currentPassword, newPassword);
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+}

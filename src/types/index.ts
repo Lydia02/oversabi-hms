@@ -133,12 +133,18 @@ export interface User extends BaseEntity {
   lastName: string;
   otherName?: string;
   age: number;
+  dateOfBirth?: Date; // New field for profile
   email: string;
   phoneNumber: string;
   passwordHash: string;
   role: UserRole;
   mdcnNumber?: string; // Required for doctors only
   hospitalName?: string; // From MDCN verification for doctors
+  bloodGroup?: BloodType; // New field for profile
+  genotype?: Genotype; // New field for profile
+  height?: number; // Height in cm
+  weight?: number; // Weight in kg
+  profilePicture?: string; // URL to profile picture
   isVerified: boolean;
   isActive: boolean;
 }
@@ -435,19 +441,29 @@ export interface Appointment extends BaseEntity {
 // ===== DOCUMENTS =====
 
 export interface Document extends BaseEntity {
-  patientId: string;
-  uploadedBy: string;
-  uploadedByRole: UserRole;
-  hospitalId?: string;
-  visitId?: string;
+  userId: string; // Patient or Doctor ID
+  userUniqueId: string; // PAT_XXX or DOC_XXX
+  uploadedBy: string; // User ID who uploaded
+  uploadedByUniqueId: string; // Uploader's unique ID
+  uploadedByName: string; // Uploader's full name
+  uploadedByRole: UserRole; // Doctor or Patient
+  
+  // Document Details
+  fileName: string;
+  originalFileName: string;
+  fileSize: number; // In bytes
+  fileType: string; // MIME type (e.g., application/pdf, image/jpeg)
+  fileUrl: string; // Storage URL
+  
+  // Metadata
   documentType: DocumentType;
   title: string;
   description?: string;
-  fileUrl: string;
-  fileName: string;
-  fileSize: number;
-  mimeType: string;
-  isConfidential: boolean;
+  relatedReportId?: string; // Link to medical report if applicable
+  
+  // Permissions
+  isPublic: boolean; // If true, visible to all healthcare providers
+  sharedWith: string[]; // Array of user IDs who can access
 }
 
 // ===== CONSULTATION RECORDS =====
@@ -736,4 +752,39 @@ export interface MedicalReport extends BaseEntity {
   // Audit
   lastEditedBy?: string;
   lastEditedAt?: Date;
+}
+
+// ===== NOTIFICATIONS =====
+
+export enum NotificationType {
+  NEW_REPORT = 'new_report',
+  REPORT_UPDATED = 'report_updated',
+  DOCUMENT_UPLOADED = 'document_uploaded',
+  APPOINTMENT_REMINDER = 'appointment_reminder',
+  SYSTEM_NOTIFICATION = 'system_notification',
+  ACCOUNT_UPDATE = 'account_update'
+}
+
+export interface Notification extends BaseEntity {
+  userId: string; // Recipient user ID
+  userUniqueId: string; // Recipient unique ID
+  
+  // Notification Content
+  type: NotificationType;
+  title: string;
+  message: string;
+  
+  // Metadata
+  isRead: boolean;
+  readAt?: Date;
+  
+  // Related Entities
+  relatedReportId?: string;
+  relatedDocumentId?: string;
+  actionUrl?: string; // Deep link to relevant page
+  
+  // Sender Info (optional)
+  senderId?: string;
+  senderName?: string;
+  senderRole?: UserRole;
 }

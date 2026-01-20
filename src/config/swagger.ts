@@ -205,6 +205,32 @@ Authorization: Bearer <access_token>
 - **Email Delivery**: Make sure to check your email after registration to get your unique login ID
 - **Token Refresh**: Keep your refresh token safe - it's needed to get new access tokens when they expire
 - **Data Transfer**: Patients can download all reports as PDF to transfer medical history to other hospitals
+
+---
+
+## Test MDCN Numbers for Doctor Registration
+
+Use any of these MDCN numbers when registering as a doctor. **Each can only be used once.**
+
+| MDCN Number | Hospital | Specialization |
+|-------------|----------|----------------|
+| **MDCN/2020/12345** | Lagos University Teaching Hospital (LUTH) | General Surgery |
+| **MDCN/2019/67890** | National Hospital Abuja | Cardiology |
+| **MDCN/2021/11111** | University of Nigeria Teaching Hospital (UNTH) | Pediatrics |
+| **MDCN/2018/22222** | Ahmadu Bello University Teaching Hospital (ABUTH) | Obstetrics & Gynecology |
+| **MDCN/2022/33333** | University College Hospital (UCH) Ibadan | Internal Medicine |
+| **MDCN/2020/44444** | Lagos State University Teaching Hospital (LASUTH) | Orthopedics |
+| **MDCN/2021/55555** | Obafemi Awolowo University Teaching Hospital (OAUTH) | Neurology |
+| **MDCN/2019/66666** | University of Benin Teaching Hospital (UBTH) | Dermatology |
+| **MDCN/2022/77777** | Jos University Teaching Hospital (JUTH) | Psychiatry |
+| **MDCN/2020/88888** | University of Ilorin Teaching Hospital (UITH) | Ophthalmology |
+| **MDCN/2021/99999** | Federal Medical Centre Abeokuta | ENT (Ear, Nose, Throat) |
+| **MDCN/2019/10101** | Aminu Kano Teaching Hospital | Radiology |
+| **MDCN/2022/20202** | University of Calabar Teaching Hospital (UCTH) | Oncology |
+| **MDCN/2020/30303** | Federal Teaching Hospital Owerri | Urology |
+| **MDCN/2021/40404** | University of Port Harcourt Teaching Hospital (UPTH) | Anesthesiology |
+
+**Note:** Once an MDCN number is used for registration, it becomes permanently linked to that doctor and cannot be used again.
       `,
       contact: {
         name: 'Oversabi Support',
@@ -358,6 +384,11 @@ Register new users (doctors or patients) and manage authentication tokens.
 - Users receive unique login IDs via email (DOC_XXX or PAT_XXX)
 - Login returns JWT access token (24h) and refresh token (7 days)
 - Both doctors and patients use the same authentication endpoints
+
+**Profile Management:**
+- Update profile information (name, age, blood group, genotype, height, weight, profile picture)
+- Change password
+- View own profile details
         `
       },
       {
@@ -383,6 +414,7 @@ Create, read, update, and delete medical reports for patients.
 - Edit/Delete only reports you created
 - View all reports you've created with pagination support
 - Status tracking: draft, final, amended
+- Automatic notification sent to patient when report is created or updated
         `
       },
       {
@@ -407,6 +439,65 @@ Access and download your own medical reports.
 - Download single report as PDF
 - Download complete medical history as PDF (all reports combined)
 - Reports sorted by creation date (newest first)
+- Receive notifications when new reports are created or updated
+        `
+      },
+      {
+        name: 'Documents',
+        description: `
+**Document Management - Prescriptions, Lab Results, Imaging**
+
+Upload, view, and manage medical documents.
+
+**Access:** Both doctors and patients (requires authentication)
+
+**Features:**
+- Upload documents (prescriptions, lab results, x-rays, scans)
+- View own documents with filtering by type
+- Download documents
+- Share documents with specific users
+- View documents shared with you
+- Delete own documents
+- Document types: prescription, lab_result, xray, ultrasound, mri, ct_scan, medical_report, referral_letter, discharge_summary, other
+
+**Workflow:**
+1. Doctor uploads prescription/lab result for patient
+2. Patient receives notification
+3. Patient views/downloads document from their dashboard
+4. Patient can share document with other healthcare providers
+        `
+      },
+      {
+        name: 'Notifications',
+        description: `
+**Notification System**
+
+View and manage notifications about medical reports, documents, and system updates.
+
+**Access:** Both doctors and patients (requires authentication)
+
+**Features:**
+- View all notifications (paginated)
+- Filter to show only unread notifications
+- Mark individual notification as read
+- Mark all notifications as read
+- Delete individual notification
+- Delete all notifications
+- Get unread notification count
+
+**Notification Types:**
+- New medical report created
+- Medical report updated
+- New document uploaded
+- Appointment reminders
+- System notifications
+- Account updates
+
+**Workflow:**
+1. Doctor creates report → Patient gets notification
+2. Doctor uploads document → Patient gets notification
+3. Patient clicks notification → Redirected to report/document
+4. Patient marks notification as read
         `
       }
     ]
