@@ -166,17 +166,16 @@ export async function verifyMDCN(req: Request, res: Response, next: NextFunction
  * @swagger
  * /mdcn/sample-numbers:
  *   get:
- *     summary: Get sample MDCN numbers for testing
+ *     summary: Get all 15 sample MDCN numbers (static list)
  *     description: |
- *       **Development/Testing only.**
+ *       Returns a static list of all 15 sample MDCN numbers available in the system.
  *
- *       Returns a list of valid sample MDCN numbers that can be used for testing doctor registration.
- *
- *       **Important:** Make sure to call `/mdcn/seed` first to populate the database with these records.
+ *       **Note:** This is a reference list. Some may already be used.
+ *       Use `/mdcn/available` to get only unused MDCN numbers.
  *     tags: [MDCN]
  *     responses:
  *       200:
- *         description: List of sample MDCN numbers
+ *         description: List of all sample MDCN numbers
  *         content:
  *           application/json:
  *             schema:
@@ -187,7 +186,59 @@ export async function verifyMDCN(req: Request, res: Response, next: NextFunction
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: "Sample MDCN numbers for testing"
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       mdcnNumber:
+ *                         type: string
+ *                       hospitalName:
+ *                         type: string
+ *                       specialization:
+ *                         type: string
+ */
+export async function getSampleMDCNNumbers(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const sampleNumbers = mdcnService.getSampleMDCNNumbers();
+
+    res.json({
+      success: true,
+      message: 'All 15 sample MDCN numbers (some may already be used)',
+      data: sampleNumbers
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * @swagger
+ * /mdcn/available:
+ *   get:
+ *     summary: Get available (unused) MDCN numbers for registration
+ *     description: |
+ *       Returns a list of MDCN numbers that have NOT been used for registration yet.
+ *
+ *       **Use this endpoint** to get valid MDCN numbers for doctor registration.
+ *       Each MDCN can only be used once - once a doctor registers with it, it becomes unavailable.
+ *
+ *       **Important:** Call `/mdcn/seed` first to populate the database with 15 MDCN records.
+ *     tags: [MDCN]
+ *     responses:
+ *       200:
+ *         description: List of available MDCN numbers
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "12 MDCN numbers available for registration"
  *                 data:
  *                   type: array
  *                   items:
@@ -198,38 +249,19 @@ export async function verifyMDCN(req: Request, res: Response, next: NextFunction
  *                         example: "MDCN/2020/12345"
  *                       hospitalName:
  *                         type: string
- *                         example: "Lagos University Teaching Hospital"
- *                       doctorName:
+ *                         example: "Lagos University Teaching Hospital (LUTH)"
+ *                       specialization:
  *                         type: string
- *                         example: "Dr. Adebayo Ogunleye"
- *             example:
- *               success: true
- *               message: "Sample MDCN numbers for testing"
- *               data:
- *                 - mdcnNumber: "MDCN/2020/12345"
- *                   hospitalName: "Lagos University Teaching Hospital"
- *                   doctorName: "Dr. Adebayo Ogunleye"
- *                 - mdcnNumber: "MDCN/2019/67890"
- *                   hospitalName: "National Hospital Abuja"
- *                   doctorName: "Dr. Fatima Mohammed"
- *                 - mdcnNumber: "MDCN/2021/11111"
- *                   hospitalName: "University of Nigeria Teaching Hospital"
- *                   doctorName: "Dr. Chukwuemeka Okafor"
- *                 - mdcnNumber: "MDCN/2018/22222"
- *                   hospitalName: "Ahmadu Bello University Teaching Hospital"
- *                   doctorName: "Dr. Amina Yusuf"
- *                 - mdcnNumber: "MDCN/2022/33333"
- *                   hospitalName: "University College Hospital Ibadan"
- *                   doctorName: "Dr. Olumide Adesanya"
+ *                         example: "General Surgery"
  */
-export async function getSampleMDCNNumbers(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function getAvailableMDCNNumbers(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const sampleNumbers = mdcnService.getSampleMDCNNumbers();
+    const availableNumbers = await mdcnService.getAvailableMDCNNumbers();
 
     res.json({
       success: true,
-      message: 'Sample MDCN numbers for testing',
-      data: sampleNumbers
+      message: `${availableNumbers.length} MDCN numbers available for registration`,
+      data: availableNumbers
     });
   } catch (error) {
     next(error);

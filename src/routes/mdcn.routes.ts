@@ -9,6 +9,7 @@ const router = Router();
 router.post('/seed', mdcnController.seedMDCNRecords);
 router.get('/verify/:mdcnNumber', mdcnController.verifyMDCN);
 router.get('/sample-numbers', mdcnController.getSampleMDCNNumbers);
+router.get('/available', mdcnController.getAvailableMDCNNumbers);
 
 // Admin routes
 router.get('/', authenticate, authorize(UserRole.ADMIN, UserRole.HOSPITAL_ADMIN), mdcnController.getAllMDCNRecords);

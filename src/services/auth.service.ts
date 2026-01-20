@@ -140,6 +140,11 @@ export class AuthService {
 
     await collections.users.doc(userId).set(user);
 
+    // Mark MDCN as used for doctors
+    if (role === UserRole.DOCTOR && mdcnNumber) {
+      await mdcnService.markMDCNAsUsed(mdcnNumber, userId, `${firstName} ${lastName}`);
+    }
+
     // Send registration email with unique ID
     await emailService.sendRegistrationEmail({
       firstName,

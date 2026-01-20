@@ -642,3 +642,89 @@ export async function getReportById(req: Request, res: Response, next: NextFunct
     next(error);
   }
 }
+/**
+ * @swagger
+ * /medical-reports/seed:
+ *   post:
+ *     summary: Seed database with sample medical reports
+ *     description: |
+ *       **Development/Testing only.**
+ *
+ *       Seeds the database with 5 sample medical reports for demonstration and testing purposes.
+ *     tags: [Medical Reports]
+ *     responses:
+ *       200:
+ *         description: Sample reports seeded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Seeded 5 medical reports"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     count:
+ *                       type: integer
+ *                       example: 5
+ */
+export async function seedMedicalReports(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const result = await medicalReportService.seedMedicalReports();
+
+    res.json({
+      success: true,
+      message: result.message,
+      data: {
+        count: result.count
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * @swagger
+ * /medical-reports/sample-ids:
+ *   get:
+ *     summary: Get sample medical report IDs for testing
+ *     description: |
+ *       **Development/Testing only.**
+ *
+ *       Returns a list of sample medical report IDs that can be used for testing purposes.
+ *     tags: [Medical Reports]
+ *     responses:
+ *       200:
+ *         description: Sample report IDs retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["MR_001", "MR_002", "MR_003"]
+ */
+export async function getSampleReportIds(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const ids = medicalReportService.getSampleReportIds();
+
+    res.json({
+      success: true,
+      data: ids
+    });
+  } catch (error) {
+    next(error);
+  }
+}

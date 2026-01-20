@@ -7,7 +7,11 @@ import * as medicalReportController from '../controllers/medicalReport.controlle
 
 const router = Router();
 
-// All routes require authentication
+// Seed routes (public for development/testing)
+router.post('/seed', medicalReportController.seedMedicalReports);
+router.get('/sample-ids', medicalReportController.getSampleReportIds);
+
+// All other routes require authentication
 router.use(authenticate);
 
 // Validation rules
