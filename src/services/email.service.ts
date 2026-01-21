@@ -10,18 +10,52 @@ interface RegistrationEmailData {
 }
 
 class EmailService {
-  private transporter: nodemailer.Transporter;
+  private transporter: nodemailer.Transporter | null = null;
+  private isConfigured: boolean = false;
 
   constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: config.email.host,
-      port: config.email.port,
-      secure: config.email.secure,
-      auth: {
-        user: config.email.user,
-        pass: config.email.pass
+    this.initializeTransporter();
+  }
+
+  private initializeTransporter(): void {
+    try {
+      // Check if email credentials are configured
+      if (!config.email.user || !config.email.pass) {
+        console.warn('⚠️  Email service: No email credentials configured. Emails will be skipped.');
+        this.isConfigured = false;
+        return;
       }
-    });
+
+      this.transporter = nodemailer.createTransport({
+        host: config.email.host,
+        port: config.email.port,
+        secure: config.email.secure,
+        auth: {
+          user: config.email.user,
+          pass: config.email.pass
+        },
+        // Add connection timeout to prevent hanging
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000
+      });
+
+      this.isConfigured = true;
+
+      // Test the connection on initialization (non-blocking)
+      this.transporter.verify()
+        .then(() => {
+          console.log('✅ Email service: SMTP connection verified successfully');
+        })
+        .catch((error: Error) => {
+          console.warn('⚠️  Email service warning: SMTP connection failed -', error.message);
+          console.warn('📧 Emails may fail to send. Check your email configuration.');
+          // Don't disable the service - still try to send emails
+        });
+    } catch (error: any) {
+      console.error('❌ Email service initialization error:', error.message);
+      this.isConfigured = false;
+    }
   }
 
   private getRegistrationEmailTemplate(data: RegistrationEmailData): string {
@@ -162,10 +196,19 @@ class EmailService {
   }
 
   async sendRegistrationEmail(data: RegistrationEmailData): Promise<boolean> {
+    // If email is not configured, skip sending but don't crash
+    if (!this.isConfigured || !this.transporter) {
+      console.warn(`⚠️  Email service not configured. Skipping email to ${data.email}`);
+      console.log(`📋 Registration details for ${data.email}:`);
+      console.log(`   - Name: ${data.firstName} ${data.lastName}`);
+      console.log(`   - Role: ${data.role}`);
+      console.log(`   - Unique ID: ${data.uniqueId}`);
+      return false;
+    }
+
     try {
       console.log(`📧 Attempting to send registration email to ${data.email}...`);
-      console.log(`Email config: Host=${config.email.host}, Port=${config.email.port}, Secure=${config.email.secure}, User=${config.email.user}`);
-      
+
       const htmlContent = this.getRegistrationEmailTemplate(data);
       const roleDisplay = data.role === 'doctor' ? 'Doctor' : 'Patient';
 
@@ -199,7 +242,12 @@ Need help? Contact our support team.
       return true;
     } catch (error: any) {
       console.error('❌ Failed to send registration email:', error.message);
-      console.error('Full error:', error);
+      // Log the registration details so they're not lost
+      console.log(`📋 Registration details for ${data.email} (email failed):`);
+      console.log(`   - Name: ${data.firstName} ${data.lastName}`);
+      console.log(`   - Role: ${data.role}`);
+      console.log(`   - Unique ID: ${data.uniqueId}`);
+      // Return false but don't throw - registration should still succeed
       return false;
     }
   }
